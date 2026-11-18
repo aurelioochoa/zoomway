@@ -1,0 +1,27 @@
+{
+  "name": "zoomway",
+  "version": "1.0.0",
+  "private": true,
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build && node scripts/check-licenses.mjs",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "check:licenses": "node scripts/check-licenses.mjs",
+    "test": "vitest run",
+    "smoke": "node scripts/smoke.mjs",
+    "fps": "node scripts/fps.mjs"
+  },
+  "dependencies": {
+    "three": "0.185.1"
+  },
+  "devDependencies": {
+    "@types/three": "0.185.4",
+    "playwright": "1.65.0",
+    "typescript": "5.9.3",
+    "vite": "8.2.2",
+    "vitest": "4.1.11"
+  }
+}
