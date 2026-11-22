@@ -1,0 +1,42 @@
+// English, the reference table. Every other language has exactly these keys and the same
+// {placeholders} (i18n.test.ts). "Zoomway" is a name and is never translated (§11).
+export const en = {
+  'pause.title': 'Paused',
+  'pause.resume': 'Resume',
+  'pause.restart': 'Start over',
+  'settings.music': 'Music',
+  'settings.sound': 'Sound',
+  'settings.motion': 'Less motion',
+  'settings.gentle': 'Gentle speed',
+  'results.newBest': 'New best!',
+  'results.again': 'Again',
+  'results.wardrobe': 'Wardrobe',
+  'wardrobe.hats': 'Hats',
+  'wardrobe.skates': 'Skates',
+  'common.back': 'Back',
+  'hat.0': 'Tangerine',
+  'hat.1': 'Lemon',
+  'hat.2': 'Strawberry',
+  'hat.3': 'Apple',
+  'hat.4': 'Pear',
+  'skates.0': 'Teal',
+  'skates.1': 'Coral',
+  'skates.2': 'Sunny yellow',
+  'skates.3': 'Lavender',
+  'skates.4': 'Lime',
+  'zone.0': 'Lagoon Boardwalk',
+  'zone.1': 'Orchard Bridge',
+  'zone.2': 'Kite Cliffs',
+  'zone.3': 'Sunset Pier',
+  'aria.game': 'Zoomway. Swipe or use the arrow keys: left and right to switch lanes, up to jump, down to slide.',
+  'aria.pause': 'Pause',
+  'aria.mute': 'Turn sound off',
+  'aria.unmute': 'Turn sound on',
+  'aria.rebuild': 'Draw the picture again',
+  'aria.distance': '{distance} metres',
+  'aria.fruit': '{count} tangerines',
+  'aria.best': 'Best: {distance} metres',
+} as const;
+
+export type StringKey = keyof typeof en;
+export type Table = Record<StringKey, string>;

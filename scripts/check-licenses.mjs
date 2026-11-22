@@ -1,161 +1,99 @@
-// Three gates in one, all from the design doc (§9, §12, SHIP-CHECKLIST §1–2):
+// The build's gates (design §9, §12; SHIP-CHECKLIST §1–2), run last by `npm run build`:
 //
 //   1. Every installed dependency carries a recognised free/open-source license.
-//   2. The game ships ZERO asset files — every mesh is a Three.js primitive, every
-//      texture procedural, every sound synthesized.
-//   3. The built output contains no live external URL loads (no CDN, no fonts, no
-//      telemetry). Inert occurrences (license comments, minified error URLs) must be
-//      allowlisted below with a reason, per house policy.
-//   4. The full bundle stays below the design's 2 MiB byte budget.
+//   2. The game ships ZERO asset files: every mesh is a Three.js primitive, every icon an
+//      inline SVG, every sound synthesized. Scans what can reach a player — src/, public/,
+//      scripts/, index.html and dist/ — never node_modules/.
+//   3. The built output contains no live external URL (no CDN, fonts or telemetry). Inert
+//      occurrences (license comments, minified error URLs) are allowlisted with a reason.
+//   4. The whole of dist/ stays under the design's 1.5 MiB byte budget.
 //
 //   node scripts/check-licenses.mjs
-//
-// Run from the repo root (it is the last step of `npm run build`). Checks dist/ too when it exists.
-import { readdirSync, readFileSync, existsSync, statSync } from 'node:fs';
-import { join, extname } from 'node:path';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { extname, join } from 'node:path';
 import { gzipSync } from 'node:zlib';
 
 const BUDGET_BYTES = 1.5 * 1024 * 1024;
 
 // MPL-2.0 is accepted only because lightningcss (Vite's CSS minifier) is a build tool:
-// nothing of it ships to players. Every runtime dependency is MIT (three).
-const FREE = [
-  /^MIT\b/i,
-  /^ISC\b/i,
-  /^BSD-\d/i,
-  /^Apache-2\.0/i,
-  /^MPL-2\.0/i,
-  /^CC0-1\.0/i,
-  /^Unlicense$/i,
-  /^0BSD$/i,
-  /^Zlib$/i,
-  /^Python-2\.0/i,
-  /^BlueOak-1\.0\.0/i,
-];
+// nothing of it ships to players. The one runtime dependency, three, is MIT.
+const FREE_LICENSES = [/^MIT\b/i, /^ISC\b/i, /^BSD-\d/i, /^Apache-2\.0/i, /^MPL-2\.0/i, /^CC0-1\.0/i, /^Unlicense$/i, /^0BSD$/i, /^BlueOak-1\.0\.0/i];
 
-const ASSET_EXTENSIONS = new Set([
-  '.glb', '.gltf', '.fbx', '.obj', '.dae', '.blend', '.stl', '.ply', '.3ds',
-  '.png', '.jpg', '.jpeg', '.gif', '.webp', '.avif', '.bmp', '.tga', '.ktx', '.ktx2',
-  '.basis', '.dds', '.hdr', '.exr', '.tif', '.tiff',
-  '.mp3', '.wav', '.ogg', '.m4a', '.flac', '.aac', '.opus', '.mid', '.midi',
-  '.ttf', '.otf', '.woff', '.woff2', '.eot',
-  '.mp4', '.webm', '.mov',
-]);
+const ASSET_EXTENSIONS = new Set(
+  '.glb .gltf .fbx .obj .dae .blend .stl .ply .3ds .png .jpg .jpeg .gif .webp .avif .bmp .tga .ktx .ktx2 .basis .dds .hdr .exr .tif .tiff .mp3 .wav .ogg .m4a .flac .aac .opus .mid .midi .ttf .otf .woff .woff2 .eot .mp4 .webm .mov .svg'.split(' '),
+);
 
-// Occurrences of http(s):// in the BUILT output that are provably inert. Each needs a
-// reason. If three.js grows new ones, verify inertness before adding them.
-const DIST_URL_ALLOWLIST = [
-  { match: 'https://github.com/mrdoob/three.js', reason: 'three.js license comment / error URLs — never fetched' },
-  { match: 'http://www.w3.org', reason: 'XML namespace URIs inside shaders — identifiers, not loads' },
-  { match: 'https://www.w3.org', reason: 'XML namespace URIs inside shaders — identifiers, not loads' },
-  { match: 'https://registry.npmjs.org', reason: 'bundled sourcemap references — never fetched at runtime' },
-  {
-    match: 'https://jcgt.org/published/0007/04/01/',
-    reason:
-      'three.js PMREM shader-source GLSL comment (hash-functions paper citation) — a comment inside a compiled-away shader string, never fetched',
-  },
+// Every http(s):// in dist/ that is provably inert, each with its reason. If three.js grows a
+// new one, prove it is never fetched before adding it here.
+const INERT_URLS = [
+  { prefix: 'https://github.com/mrdoob/three.js', reason: 'three.js license comment and error-message links, never fetched' },
+  { prefix: 'http://www.w3.org', reason: 'XML namespace identifiers (SVG markup), not loads' },
+  { prefix: 'https://jcgt.org/published/0007/04/01/', reason: 'a paper citation in a comment inside three.js PMREM shader source, never fetched' },
 ];
 
 const failures = [];
-const warnings = [];
 
-function walk(dir, onFile) {
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const full = join(dir, entry.name);
-    if (entry.isDirectory()) {
-      if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
-      walk(full, onFile);
-    } else if (entry.isFile()) {
-      onFile(full);
-    }
+function walk(directory, onFile) {
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    const path = join(directory, entry.name);
+    if (entry.isDirectory() && entry.name !== 'node_modules') walk(path, onFile);
+    else if (entry.isFile()) onFile(path);
   }
 }
 
-// ---- gate 1: dependency licenses ---------------------------------------------
-
-function licenseOf(pkg) {
-  if (typeof pkg.license === 'string') return pkg.license;
-  if (pkg.license && typeof pkg.license === 'object' && pkg.license.type) return pkg.license.type;
-  if (Array.isArray(pkg.licenses) && pkg.licenses.length) {
-    return pkg.licenses.map((l) => (typeof l === 'string' ? l : l.type)).join(' OR ');
-  }
-  return null;
-}
-
+// ---- 1. dependency licenses --------------------------------------------------------
 if (!existsSync('node_modules')) {
-  failures.push('node_modules/ missing — run `npm install` before the license check');
+  failures.push('node_modules/ missing: run `npm ci` before the license gate');
 } else {
+  const packageDirectories = readdirSync('node_modules').flatMap((name) =>
+    name.startsWith('@') ? readdirSync(join('node_modules', name)).map((scoped) => join(name, scoped)) : name.startsWith('.') ? [] : [name],
+  );
   let checked = 0;
-  for (const entry of readdirSync('node_modules', { withFileTypes: true })) {
-    if (!entry.isDirectory() || entry.name.startsWith('.') || entry.name.startsWith('@')) continue;
-    const pkgPath = join('node_modules', entry.name, 'package.json');
-    if (!existsSync(pkgPath)) continue;
-    const lic = licenseOf(JSON.parse(readFileSync(pkgPath, 'utf8')));
+  for (const name of packageDirectories) {
+    const manifestPath = join('node_modules', name, 'package.json');
+    if (!existsSync(manifestPath)) continue;
+    const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+    const license = typeof manifest.license === 'string' ? manifest.license : manifest.license?.type;
     checked++;
-    if (!lic || !FREE.some((re) => re.test(lic))) {
-      failures.push(`dependency "${entry.name}" license is not recognised free: ${lic ?? '(none)'}`);
-    }
-  }
-  for (const scope of readdirSync('node_modules', { withFileTypes: true })) {
-    if (!scope.isDirectory() || !scope.name.startsWith('@')) continue;
-    for (const pkg of readdirSync(join('node_modules', scope.name), { withFileTypes: true })) {
-      if (!pkg.isDirectory()) continue;
-      const pkgPath = join('node_modules', scope.name, pkg.name, 'package.json');
-      if (!existsSync(pkgPath)) continue;
-      const lic = licenseOf(JSON.parse(readFileSync(pkgPath, 'utf8')));
-      checked++;
-      if (!lic || !FREE.some((re) => re.test(lic))) {
-        failures.push(
-          `dependency "${scope.name}/${pkg.name}" license is not recognised free: ${lic ?? '(none)'}`,
-        );
-      }
+    if (!license || !FREE_LICENSES.some((pattern) => pattern.test(license))) {
+      failures.push(`dependency "${name}" license is not recognised as free: ${license ?? '(none)'}`);
     }
   }
   console.log(`license gate: ${checked} dependencies checked`);
 }
 
-// ---- gate 2: zero asset files -------------------------------------------------
+// ---- 2. zero asset files -----------------------------------------------------------
+let scanned = 0;
+const onSourceFile = (path) => {
+  scanned++;
+  if (ASSET_EXTENSIONS.has(extname(path).toLowerCase())) failures.push(`asset file present (§9 zero-asset rule): ${path}`);
+};
+for (const directory of ['src', 'public', 'scripts', 'dist']) if (existsSync(directory)) walk(directory, onSourceFile);
+onSourceFile('index.html');
+console.log(`asset gate: ${scanned} files scanned`);
 
-let filesSeen = 0;
-walk('.', (file) => {
-  filesSeen++;
-  const ext = extname(file).toLowerCase();
-  if (ASSET_EXTENSIONS.has(ext)) failures.push(`asset file present (§9 zero-asset rule): ${file}`);
-  if (ext === '.svg') warnings.push(`svg file present — inline SVG only, or justify it: ${file}`);
-});
-console.log(`asset gate: ${filesSeen} source files scanned`);
-
-// ---- gate 3: no live external URLs in the built output ------------------------
-
-if (existsSync('dist')) {
-  let distFiles = 0;
-  let raw = 0;
-  let gzip = 0;
-  walk('dist', (file) => {
-    distFiles++;
-    raw += statSync(file).size;
-    gzip += gzipSync(readFileSync(file)).length;
-    const ext = extname(file).toLowerCase();
-    if (!['.js', '.html', '.css', '.json'].includes(ext)) return;
-    const text = readFileSync(file, 'utf8');
-    const urls = text.match(/https?:\/\/[^\s"'`)]+/g) ?? [];
-    for (const url of urls) {
-      const allowed = DIST_URL_ALLOWLIST.find((a) => url.startsWith(a.match));
-      if (!allowed) {
-        failures.push(`live external URL in built output: ${url} (${file})`);
-      }
+// ---- 3 and 4. no live URLs in dist/, and the byte budget ---------------------------
+if (!existsSync('dist')) {
+  failures.push('dist/ missing: the network and byte gates need a build');
+} else {
+  let rawBytes = 0;
+  let gzipBytes = 0;
+  walk('dist', (path) => {
+    const content = readFileSync(path);
+    rawBytes += statSync(path).size;
+    gzipBytes += gzipSync(content).length;
+    if (!['.js', '.html', '.css', '.json'].includes(extname(path))) return;
+    for (const url of content.toString('utf8').match(/https?:\/\/[^\s"'`)\\]+/g) ?? []) {
+      if (!INERT_URLS.some((inert) => url.startsWith(inert.prefix))) failures.push(`live external URL in built output: ${url} (${path})`);
     }
   });
-  console.log(`network gate: ${distFiles} dist files scanned`);
-  console.log(`byte budget: ${(raw / 1024).toFixed(1)} KiB raw, ${(gzip / 1024).toFixed(1)} KiB gzip (limit ${BUDGET_BYTES / 1024} KiB raw)`);
-  if (raw >= BUDGET_BYTES) failures.push(`dist/ is ${raw} bytes, at or above the ${BUDGET_BYTES}-byte budget`);
-} else {
-  console.log('network gate: no dist/ yet (build first to scan it)');
+  console.log(`network gate: dist/ scanned for external URLs`);
+  console.log(`byte budget: ${(rawBytes / 1024).toFixed(1)} KiB raw, ${(gzipBytes / 1024).toFixed(1)} KiB gzip (limit ${BUDGET_BYTES / 1024} KiB raw)`);
+  if (rawBytes >= BUDGET_BYTES) failures.push(`dist/ is ${rawBytes} bytes, at or above the ${BUDGET_BYTES}-byte budget`);
 }
 
-for (const w of warnings) console.warn(`WARN: ${w}`);
 if (failures.length) {
-  for (const f of failures) console.error(`FAIL: ${f}`);
+  for (const failure of failures) console.error(`FAIL: ${failure}`);
   process.exit(1);
 }
 console.log('all gates passed');
