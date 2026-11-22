@@ -36,6 +36,8 @@ export interface RunResult {
   fruit: number;
   best: number;
   newBest: boolean;
+  /** The most tangerines in one run (§5), shown with a star. */
+  fruitRecord: boolean;
   furthestEver: number;
 }
 
@@ -112,7 +114,7 @@ export class Ui {
     // §3: the page opens on the run, under the wordmark, with two quiet pulsing icons.
     this.title = element('div', 'title');
     const hints = touchDevice ? [ICONS.swipeSideways, ICONS.swipeUpDown] : [ICONS.keysSideways, ICONS.keysUpDown];
-    this.title.innerHTML = `<div class="wordmark">Zoomway</div><div class="strip-holder"></div><div class="start-hints">${hints.map((icon) => `<span class="pulse">${icon}</span>`).join('')}</div>`;
+    this.title.innerHTML = `<div class="title-head"><div class="wordmark">Zoomway</div><div class="strip-holder"></div></div><div class="start-hints">${hints.map((icon) => `<span class="pulse">${icon}</span>`).join('')}</div>`;
     this.hint = element('div', 'slide-hint hidden', `<span class="pulse">${touchDevice ? ICONS.swipeDown : ICONS.keyDown}</span>`);
     this.toast = element('div', 'zone-toast hidden');
     this.countdown = element('div', 'countdown hidden', '<i></i><i></i><i></i>');
@@ -193,7 +195,9 @@ export class Ui {
       // §8: one line along the strip with two markers, this run and the flag.
       const line = element('div', 'strip-line');
       line.style.setProperty('--run', String(stripPosition(result.distance)));
-      line.innerHTML = `<span class="marker run">${ICONS.tangerine}</span>${result.best > 0 ? `<span class="marker best" style="--at:${stripPosition(result.best)}">${ICONS.flag}</span>` : ''}`;
+      line.innerHTML = `<span class="marker run">${ICONS.tangerine}</span>${
+        result.best > 0 ? `<span class="marker best" style="--at:${stripPosition(result.best)}" title="${translate('aria.best', { distance: formatNumber(result.best) })}">${ICONS.flag}</span>` : ''
+      }`;
       strip.append(line);
     }
     return strip;
@@ -248,7 +252,11 @@ export class Ui {
       `<span class="icon">${ICONS.skate}</span><b>${formatNumber(result.distance)}</b>`,
     );
     headline.setAttribute('aria-label', translate('aria.distance', { distance: formatNumber(result.distance) }));
-    const fruit = element('div', 'result-fruit', `<span class="icon">${ICONS.tangerine}</span><b>${formatNumber(result.fruit)}</b>`);
+    const fruit = element(
+      'div',
+      'result-fruit',
+      `<span class="icon">${ICONS.tangerine}</span><b>${formatNumber(result.fruit)}</b>${result.fruitRecord ? `<span class="icon">${ICONS.star}</span>` : ''}`,
+    );
     fruit.setAttribute('aria-label', translate('aria.fruit', { count: formatNumber(result.fruit) }));
     const badge = element('div', `badge${result.newBest ? '' : ' hidden'}`, `<span class="icon">${ICONS.star}</span><span>${translate('results.newBest')}</span>`);
     const again = iconButton('again primary', ICONS.restart, translate('results.again'), () => this.tryRestart());

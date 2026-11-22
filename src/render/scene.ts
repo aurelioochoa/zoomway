@@ -337,18 +337,19 @@ export class GameScene {
     const feet = runner.previousFeet + (runner.feet - runner.previousFeet) * frame.alpha;
     // §12: the origin rebases every 500 m, so the GPU only ever sees small numbers.
     this.origin = Math.floor(viewZ / 500) * 500;
-    const toRender = (z: number) => -(z - this.origin);
-    const playerZ = toRender(viewZ);
+    const playerZ = this.toRender(viewZ);
     const motion = !frame.reducedMotion;
     const time = this.time;
 
     // Palettes drift toward the zone the capybara is in, never jump (§5).
     const target = PALETTES[zoneAt(run.distance)]!;
     let drift = 0;
-    this.palette.forEach((color, index) => {
-      drift += Math.abs(color.r - target[index]!.r) + Math.abs(color.g - target[index]!.g) + Math.abs(color.b - target[index]!.b);
-      color.lerp(target[index]!, Math.min(1, delta * 0.6));
-    });
+    for (let index = 0; index < 3; index++) {
+      const color = this.palette[index]!;
+      const goal = target[index]!;
+      drift += Math.abs(color.r - goal.r) + Math.abs(color.g - goal.g) + Math.abs(color.b - goal.b);
+      color.lerp(goal, Math.min(1, delta * 0.6));
+    }
     if (drift > 0.003) {
       (this.scene.fog as Fog).color.copy(this.palette[1]!);
       (this.water.material as MeshLambertMaterial).color.copy(this.palette[2]!);
@@ -362,7 +363,7 @@ export class GameScene {
       const ahead = item.z - viewZ;
       if (ahead < -VIEW_BEHIND) continue;
       if (ahead > VIEW_AHEAD) break;
-      const z = toRender(item.z);
+      const z = this.toRender(item.z);
       // Things fade up out of the distance rather than appearing (they arrive in the fog).
       const distanceScale = Math.min(1, Math.max(0, (VIEW_AHEAD - 20 - ahead) / 20));
       if (item.kind === 'fruit') {
@@ -414,18 +415,18 @@ export class GameScene {
           break;
       }
     }
-    this.placeScenery(run, viewZ, toRender);
+    this.placeScenery(run, viewZ);
     this.updateParticles(delta, playerZ, feet, viewX, frame);
     this.poseCapybara(run, frame, viewX, feet, playerZ);
     this.shadow(viewX, playerZ, 1.0, 1.3);
 
     // The deck is world-locked: it moves in whole railing periods, so planks never swim.
-    this.deck.position.set(0, 0, toRender(Math.floor(viewZ / DECK_PERIOD) * DECK_PERIOD - VIEW_BEHIND));
+    this.deck.position.set(0, 0, this.toRender(Math.floor(viewZ / DECK_PERIOD) * DECK_PERIOD - VIEW_BEHIND));
     this.water.position.set(viewX, -1.0, playerZ);
     this.flag.visible = frame.flagDistance > 0;
     if (this.flag.visible) {
       const flagZ = run.started ? run.startZ + frame.flagDistance : viewZ + frame.flagDistance;
-      this.flag.position.set(laneCenter(2) + 1.45, 0, toRender(flagZ));
+      this.flag.position.set(laneCenter(2) + 1.45, 0, this.toRender(flagZ));
       const passed = run.started && run.distance >= frame.flagDistance;
       this.flag.rotation.y = passed ? Math.min(1, (run.distance - frame.flagDistance) / 12) * Math.PI * 4 : 0;
     }
@@ -436,7 +437,12 @@ export class GameScene {
     this.moveCamera(run, frame, viewX, feet, playerZ);
   }
 
-  private placeScenery(run: Run, viewZ: number, toRender: (z: number) => number): void {
+  /** Sim z (forward) to render z (-z forward), relative to the rebased origin. */
+  private toRender(z: number): number {
+    return -(z - this.origin);
+  }
+
+  private placeScenery(run: Run, viewZ: number): void {
     const density = this.tier === 2 ? 0.3 : 0.6;
     const firstBin = Math.floor((viewZ - VIEW_BEHIND) / SCENERY_BIN);
     for (let bin = firstBin; bin * SCENERY_BIN < viewZ + VIEW_AHEAD; bin++) {
@@ -446,12 +452,12 @@ export class GameScene {
         const z = bin * SCENERY_BIN;
         const zone = zoneAt(z - run.startZ);
         const spread = zone === 2 ? 22 : 10;
-        this.place(this.scenery[zone]!, side * (spread + chance * 16), 0, toRender(z), chance * 9, 0.85 + chance * 0.5);
+        this.place(this.scenery[zone]!, side * (spread + chance * 16), 0, this.toRender(z), chance * 9, 0.85 + chance * 0.5);
       }
     }
     for (let bin = Math.floor(viewZ / CLOUD_BIN) - 1; bin * CLOUD_BIN < viewZ + 260; bin++) {
       const chance = hashPosition(bin, 11);
-      this.place(this.clouds, (chance - 0.5) * 160, 30 + chance * 20, toRender(bin * CLOUD_BIN), chance * 3, 1 + chance);
+      this.place(this.clouds, (chance - 0.5) * 160, 30 + chance * 20, this.toRender(bin * CLOUD_BIN), chance * 3, 1 + chance);
     }
   }
 
@@ -498,7 +504,9 @@ export class GameScene {
     const onGround = feet === 0 && !run.over;
     const stride = motion && onGround && run.speed > 0 ? Math.sin(time * 9) : 0;
     capybara.position.set(viewX, feet + Math.abs(stride) * 0.03, playerZ);
-    capybara.rotation.set(0, stride * 0.05, this.lean + (runner.scrapeSeconds > 0 ? Math.sin(time * 40) * 0.12 : 0));
+    // A scrape, or the swim ring just popped: the capybara wobbles on (§8).
+    const wobbling = runner.scrapeSeconds > 0 || run.graceSeconds > 0;
+    capybara.rotation.set(0, stride * 0.05, this.lean + (wobbling ? Math.sin(time * 30) * 0.12 : 0));
     capybara.scale.set(1, 1, 1);
     this.hat.position.set(0, 1.19, -0.55);
     this.hat.rotation.set(0, 0, 0);

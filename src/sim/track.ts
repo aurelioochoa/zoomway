@@ -55,7 +55,7 @@ export class Track {
   /** Keep LOOK_AHEAD metres of boardwalk built ahead and drop what is well behind. */
   update(playerZ: number, runSeconds: number, speed: number, gentle: boolean): void {
     while (this.cursor < playerZ + LOOK_AHEAD) {
-      const arrival = runSeconds + (this.cursor - playerZ) / Math.max(speed, 1);
+      const arrival = runSeconds + Math.max(0, this.cursor - playerZ) / Math.max(speed, 1);
       this.lay(speedAt(arrival, gentle), gentle);
     }
     while (this.items.length && this.items[0]!.z < playerZ - 12) this.items.shift();

@@ -66,6 +66,7 @@ let bonkSeconds = -1;
 let countdownSeconds = 0;
 let recorded = false;
 let newBest = false;
+let fruitRecord = false;
 let shownDistance = -1;
 
 const ui = new Ui(
@@ -160,6 +161,7 @@ function newRun(moving: boolean): void {
 function record(): boolean {
   if (recorded || !run.started) return false;
   recorded = true;
+  fruitRecord = run.fruit > save.bestFruit;
   const newBest = recordRun(save, run.gentle, run.distance, run.fruit);
   persist();
   return newBest;
@@ -224,7 +226,7 @@ function queueInput(input: Input): void {
 
 function showResults(): void {
   phase = 'results';
-  ui.openResults({ distance: run.distance, fruit: run.fruit, best: run.best, newBest, furthestEver: furthestEver() });
+  ui.openResults({ distance: run.distance, fruit: run.fruit, best: run.best, newBest, fruitRecord, furthestEver: furthestEver() });
 }
 
 // ---- events from the sim ------------------------------------------------------------
@@ -234,6 +236,7 @@ function onEvents(events: number): void {
     ui.showTitle(false, furthestEver());
     sound.unlock();
     sound.startMusic();
+    sound.whoosh();
   }
   if (events & EVENT_LANE) sound.whoosh();
   if (events & EVENT_JUMP) sound.boing();

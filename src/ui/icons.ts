@@ -36,15 +36,15 @@ export const ICONS = {
   ),
   keyDown: svg('<rect x="2" y="2" width="20" height="20" rx="4.5" fill="#fff" stroke="#9aa9b8" stroke-width="1.6"/><path d="M12 6.5v10m-4-3.8 4 4 4-4" fill="none" stroke="#3b4a5a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>'),
   swipeSideways: svg(
-    '<path d="M3 6h9m-3-3 3 3-3 3M29 6h-9m3-3-3 3 3 3" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.5 22v-8.5a1.6 1.6 0 0 1 3.2 0V17l.3-1.4a1.5 1.5 0 0 1 2.9.5l-.1 1 .3-.8a1.4 1.4 0 0 1 2.7.7v4.5" fill="#ffe0c2" stroke="#9a6a4a" stroke-width="1.2" stroke-linejoin="round"/>',
+    '<path d="M3 6h9m-3-3 3 3-3 3M29 6h-9m3-3-3 3 3 3" fill="none" stroke="#3b4a5a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.5 22v-8.5a1.6 1.6 0 0 1 3.2 0V17l.3-1.4a1.5 1.5 0 0 1 2.9.5l-.1 1 .3-.8a1.4 1.4 0 0 1 2.7.7v4.5" fill="#ffe0c2" stroke="#9a6a4a" stroke-width="1.2" stroke-linejoin="round"/>',
     '0 0 32 24',
   ),
   swipeUpDown: svg(
-    '<path d="M5 3v8m-3-5 3-3 3 3M27 13V5m-3 5 3 3 3-3" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.5 22v-8.5a1.6 1.6 0 0 1 3.2 0V17l.3-1.4a1.5 1.5 0 0 1 2.9.5l-.1 1 .3-.8a1.4 1.4 0 0 1 2.7.7v4.5" fill="#ffe0c2" stroke="#9a6a4a" stroke-width="1.2" stroke-linejoin="round"/>',
+    '<path d="M5 3v8m-3-5 3-3 3 3M27 13V5m-3 5 3 3 3-3" fill="none" stroke="#3b4a5a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.5 22v-8.5a1.6 1.6 0 0 1 3.2 0V17l.3-1.4a1.5 1.5 0 0 1 2.9.5l-.1 1 .3-.8a1.4 1.4 0 0 1 2.7.7v4.5" fill="#ffe0c2" stroke="#9a6a4a" stroke-width="1.2" stroke-linejoin="round"/>',
     '0 0 32 24',
   ),
   swipeDown: svg(
-    '<path d="M6 3v9m-3-3 3 3 3-3" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.5 22v-8.5a1.6 1.6 0 0 1 3.2 0V17l.3-1.4a1.5 1.5 0 0 1 2.9.5l-.1 1 .3-.8a1.4 1.4 0 0 1 2.7.7v4.5" fill="#ffe0c2" stroke="#9a6a4a" stroke-width="1.2" stroke-linejoin="round"/>',
+    '<path d="M6 3v9m-3-3 3 3 3-3" fill="none" stroke="#3b4a5a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.5 22v-8.5a1.6 1.6 0 0 1 3.2 0V17l.3-1.4a1.5 1.5 0 0 1 2.9.5l-.1 1 .3-.8a1.4 1.4 0 0 1 2.7.7v4.5" fill="#ffe0c2" stroke="#9a6a4a" stroke-width="1.2" stroke-linejoin="round"/>',
   ),
   zones: [
     svg('<circle cx="12" cy="12" r="10" fill="#3fc6c9"/><path d="M4 14c2.5-2 5-2 8 0s5.5 2 8 0" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/><circle cx="15" cy="8" r="2.4" fill="#ffd34d"/>'),

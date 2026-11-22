@@ -165,7 +165,8 @@ export function obstacleModels(): BufferGeometry[][] {
       [box(1.32, 0.16, 1.02), 0xff8fb1, [0, 1.2, 0]],
       ...wheels(0.3, 0.6),
       [tube(0.04, 0.04, 1.0), 0xffffff, [0, 1.75, 0]],
-      [cone(0.78, 0.4, 10), 0x7fd8c4, [0, 2.1, 0]],
+      // Narrower than the lane, so no costume ever seems to reach into the next one.
+      [cone(0.66, 0.4, 10), 0x7fd8c4, [0, 2.1, 0]],
       [ball(0.08, 6), 0xffffff, [0, 2.32, 0]],
       [cone(0.1, 0.25, 8), 0xe8b06a, [-0.35, 1.4, 0], [Math.PI, 0, 0]],
       [ball(0.11, 8), 0xfff0f5, [-0.35, 1.55, 0]],

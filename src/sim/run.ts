@@ -165,12 +165,13 @@ export class Run {
       this.flagPassed = true;
       events |= EVENT_FLAG;
     }
-    ZONE_STARTS.forEach((start, zone) => {
-      if (zone > 0 && start > this.furthestEver && distanceBefore < start && distance >= start) {
+    for (let zone = 1; zone < ZONE_STARTS.length; zone++) {
+      const start = ZONE_STARTS[zone]!;
+      if (start > this.furthestEver && distanceBefore < start && distance >= start) {
         this.zoneReached = zone;
         events |= EVENT_ZONE;
       }
-    });
+    }
     return events;
   }
 

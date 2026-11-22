@@ -33,7 +33,7 @@ button:focus-visible { outline: none; box-shadow: var(--focus); }
 .hud {
   position: absolute; left: 0; right: 0; top: 0; display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;
   padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) 0 max(10px, env(safe-area-inset-left));
-  pointer-events: none;
+  pointer-events: none; z-index: 3;
 }
 .hud-left { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; max-width: calc(100% - 130px); }
 .hud-right { display: flex; gap: 10px; pointer-events: auto; }
@@ -57,12 +57,11 @@ button:focus-visible { outline: none; box-shadow: var(--focus); }
 
 .title { position: absolute; inset: 0; pointer-events: none; transition: transform 0.5s ease, opacity 0.5s ease; }
 .title.gone { transform: translateY(-40px); opacity: 0; }
+.title-head { position: absolute; left: 0; right: 0; top: max(70px, calc(env(safe-area-inset-top) + 62px)); display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .wordmark {
-  position: absolute; left: 50%; top: max(78px, calc(env(safe-area-inset-top) + 70px)); transform: translateX(-50%);
   font-weight: 900; font-size: clamp(44px, 11vw, 84px); letter-spacing: 1px; color: #ff8a3d; white-space: nowrap;
   text-shadow: 0 3px 0 #fff, 0 5px 0 #ffd0a8, 0 10px 22px rgba(160, 80, 20, 0.35); font-style: italic;
 }
-.strip-holder { position: absolute; left: 50%; transform: translateX(-50%); top: max(185px, calc(env(safe-area-inset-top) + 170px)); }
 .start-hints { position: absolute; left: 0; right: 0; bottom: max(28px, env(safe-area-inset-bottom)); display: flex; justify-content: center; gap: 28px; }
 .start-hints .pulse { width: 96px; height: 72px; }
 .pulse { display: inline-flex; animation: breathe 1.6s ease-in-out infinite; filter: drop-shadow(0 4px 8px rgba(20, 70, 90, 0.3)); }
@@ -92,7 +91,7 @@ button:focus-visible { outline: none; box-shadow: var(--focus); }
 .countdown i { width: 30px; height: 30px; border-radius: 50%; background: rgba(255, 255, 255, 0.45); box-shadow: var(--shadow); }
 .countdown i.on { background: #ff8a3d; animation: breathe 0.5s ease-in-out infinite; }
 
-.scrim { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(30, 80, 100, 0.25); padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
+.scrim { position: absolute; inset: 0; z-index: 2; display: flex; align-items: center; justify-content: center; background: rgba(30, 80, 100, 0.25); padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
 .card { border-radius: 28px; padding: 22px; width: min(460px, 100%); max-height: 100%; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; align-items: center; animation: rise 0.3s ease-out; }
 @keyframes rise { from { transform: translateY(24px) scale(0.96); opacity: 0; } }
 .card h2 { margin: 0; font-size: 28px; font-weight: 900; }
@@ -144,8 +143,8 @@ button:focus-visible { outline: none; box-shadow: var(--focus); }
   .card { gap: 8px; padding: 14px; }
   .result-distance { font-size: 44px; }
   .again { min-height: 80px; }
-  .wordmark { top: max(56px, env(safe-area-inset-top)); font-size: 48px; }
-  .strip-holder { top: 130px; }
+  .title-head { top: max(56px, env(safe-area-inset-top)); gap: 4px; }
+  .wordmark { font-size: 48px; }
 }
 /* §D: the pause menu's Less motion switch, defaulting to the system preference. */
 .reduced .pulse, .reduced .badge .icon, .reduced .countdown i.on, .reduced .card { animation: none; }
